@@ -698,14 +698,14 @@ if defined? Zlib
         e = assert_raise(Zlib::GzipFile::Error) {
           Zlib::GzipReader.open(t.path)
         }
-        assert_equal("not in gzip format", e.message)
+        assert_equal("not in gzip format, input=\"foo\"", e.message)
         assert_equal("#<Zlib::GzipFile::Error: not in gzip format, input=\"foo\">", e.inspect)
         assert_equal("foo", e.input)
         open(t.path, "wb") {|f| f.write("foobarzothoge")}
         e = assert_raise(Zlib::GzipFile::Error) {
           Zlib::GzipReader.open(t.path)
         }
-        assert_equal("not in gzip format", e.message)
+        assert_equal("not in gzip format, input=\"foobarzothoge\"", e.message)
         assert_equal("#<Zlib::GzipFile::Error: not in gzip format, input=\"foobarzothoge\">", e.inspect)
         assert_equal("foobarzothoge", e.input)
 

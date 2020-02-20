@@ -174,7 +174,6 @@ static VALUE gzfile_ensure_close(VALUE);
 static VALUE rb_gzfile_s_wrap(int, VALUE*, VALUE);
 static VALUE gzfile_s_open(int, VALUE*, VALUE, const char*);
 NORETURN(static void gzfile_raise(struct gzfile *, VALUE, const char *));
-static VALUE gzfile_error_inspect(VALUE);
 
 static VALUE rb_gzfile_to_io(VALUE);
 static VALUE rb_gzfile_crc(VALUE);
@@ -2477,31 +2476,23 @@ gzfile_set32(unsigned long n, unsigned char *dst)
 static void
 gzfile_raise(struct gzfile *gz, VALUE klass, const char *message)
 {
-    VALUE exc = rb_exc_new2(klass, message);
-    if (!NIL_P(gz->z.input)) {
-	rb_ivar_set(exc, id_input, rb_str_resurrect(gz->z.input));
-    }
-    rb_exc_raise(exc);
-}
+    VALUE full_message = rb_str_new(0, 0);
+    VALUE input = gz->z.input;
 
-/*
- * Document-method: Zlib::GzipFile::Error#inspect
- *
- * Constructs a String of the GzipFile Error
- */
-static VALUE
-gzfile_error_inspect(VALUE error)
-{
-    VALUE str = rb_call_super(0, 0);
-    VALUE input = rb_attr_get(error, id_input);
+    rb_str_cat2(full_message, message);
 
     if (!NIL_P(input)) {
-	rb_str_resize(str, RSTRING_LEN(str)-1);
-	rb_str_cat2(str, ", input=");
-	rb_str_append(str, rb_str_inspect(input));
-	rb_str_cat2(str, ">");
+      rb_str_cat2(full_message, ", input=");
+      rb_str_append(full_message, rb_str_inspect(input));
     }
-    return str;
+
+    VALUE exc = rb_exc_new2(klass, RSTRING_PTR(full_message));
+
+    if (!NIL_P(input)) {
+      rb_ivar_set(exc, id_input, rb_str_resurrect(input));
+    }
+
+    rb_exc_raise(exc);
 }
 
 static void
@@ -4648,7 +4639,6 @@ Init_zlib(void)
 
     /* input gzipped string */
     rb_define_attr(cGzError, "input", 1, 0);
-    rb_define_method(cGzError, "inspect", gzfile_error_inspect, 0);
 
     cNoFooter = rb_define_class_under(cGzipFile, "NoFooter", cGzError);
     cCRCError = rb_define_class_under(cGzipFile, "CRCError", cGzError);
